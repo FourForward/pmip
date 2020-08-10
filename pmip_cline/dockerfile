@@ -1,0 +1,19 @@
+FROM ubuntu
+MAINTAINER tina_han<553630934@qq.com>
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list && \
+    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo 'Asia/Shanghai' >/etc/timezone && \
+    apt-get clean && \
+    apt-get update && \
+    apt-get install -y libpython3.8 python3 python3-pip nginx && \
+    pip3 config set global.index-url http://mirrors.aliyun.com/pypi/simple && \
+    pip3 config set install.trusted-host mirrors.aliyun.com && \
+    pip3 install pip -U && \
+    pip3 install django requests uwsgi && \
+    rm -rf /var/cache/apk/* && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get autoremove -y python3-pip && \
+    rm /etc/nginx/sites-enabled/default
+COPY project /home/
+COPY default /etc/nginx/sites-enabled/
+CMD ["sh", "-c", "uwsgi -i /home/PMIP/PMIP/uwsgi.ini && nginx -g 'daemon off;'"]
