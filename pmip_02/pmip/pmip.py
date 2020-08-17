@@ -4,13 +4,14 @@ import json
 
 from aiohttp import WSMsgType
 
+server_ip = 'ws://[你的服务器IP:端口号]'
 
 async def myclien():
     headers = {'status': 'pmip'}
     session = aiohttp.ClientSession(headers=headers)
     while True:
         try:
-            async with session.ws_connect('ws://127.0.0.1') as ws:
+            async with session.ws_connect(server_ip) as ws:
                 active = True
                 while active:
                     data = await ws.receive()
@@ -38,7 +39,7 @@ async def myclien():
         except Exception as e:
             # 若连接断开，或是服务器拒绝建立连接，那么每隔60秒再次请求连接
             print(e, '等待重新连接')
-            await asyncio.sleep(5)
+            await asyncio.sleep(60)
             continue
 
 
