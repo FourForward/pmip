@@ -19,28 +19,37 @@ async def bypmip(scope, receive, send):
     """
     while True:
         event = await receive()
-        if event['type'] == 'websocket.connect': # 请求连接分支
-            ip = scope['client'][0]
+        if event['type'] == 'websocket.connect':  # 请求连接分支
+            # 代理IP 端，一个主IP 只允许有一个代理
+            # {'type': 'websocket', 'path': '/', 'raw_path': b'/',
+            # 'headers': [(b'upgrade', b'WebSocket'), (b'connection', b'upgrade'),
+            #           (b'host', b'49.233.38.13'), (b'x-real-ip', b'222.212.133.97'),
+            #           (b'x-forwarded-for', b'222.212.133.97'), (b'status', b'pmip'),
+            #           (b'sec-websocket-version', b'13'), (b'sec-websocket-key', b'VYwIeZ0EN/jZZyOqe76WHw=='),
+            #           (b'accept', b'*/*'), (b'accept-encoding', b'gzip, deflate'),
+            #           (b'user-agent', b'Python/3.8 aiohttp/3.6.2')],
+            # 'query_string': b'', 'client': ['127.0.0.1', 56650], 'server': ['127.0.0.1', 8000], 'subprotocols': [], 'asgi': {'version': '3.0'}}
+            ip = dict(scope['headers'])[b'x-real-ip']
             if not pmip_dict.get(ip, ''):
                 pmip_dict[ip] = [scope, receive, send]
                 for item in my_url_dict.values():
                     item.append(ip)  # 这里会不会出问题？需不需要加锁
                 await send({'type': 'websocket.accept'})
             else:
-                await send({'type': 'websocket.no'})
+                break
 
-        elif event['type'] == 'websocket.receive': # 收发数据分支
+        elif event['type'] == 'websocket.receive':  # 收发数据分支
             # 判断这条消息是给哪个客户的，进行选择发送
             # print(event)
             # >>> {'type': 'websocket.receive', 'bytes': b'user=127.0.0.1:40766,text=\n<!doctype html>\n\n<html>\n…………}
             message = event['bytes']
             # >>> b'user=127.0.0.1:40766,text=\n<!doctype html>\n\n<html>\n…………
             user = re.search(rb'user=(?P<IP>.*?),text', message, re.S).group('IP').decode()
-            text = re.search(rb',text=(?P<text>.*)',message,re.S).group('text')
-            if target_send := clien_dict.get(user,None)[-1]:
+            text = re.search(rb',text=(?P<text>.*)', message, re.S).group('text')
+            if target_send := clien_dict.get(user, None)[-1]:
                 await target_send({'type': 'websocket.send', 'bytes': text})
 
-        elif event['type'] == 'websocket.disconnect': # 断开连接分支
+        elif event['type'] == 'websocket.disconnect':  # 断开连接分支
             try:
                 del pmip_dict[ip]
             except Exception as e:
@@ -58,8 +67,8 @@ async def byclien(scope, receive, send):
     while True:
         event = await receive()
         if event['type'] == 'websocket.connect':
-            # 将客户的IP+端口存入字典中，同一个IP 可能会有多个客户同时存在,所以加上端口号
-            ip = scope['client'][0] + ':' + str(scope['client'][1])
+            # 将客户的IP+端口存入字典中，同一个IP 可能会有多个客户同时存在,所以取每个websocket的KEY值做键
+            ip = dict(scope['headers'])[b'sec-websocket-key']
             clien_dict[ip] = [scope, receive, send]
             await send({'type': 'websocket.accept'})
         elif event['type'] == 'websocket.receive':
@@ -81,7 +90,8 @@ async def byclien(scope, receive, send):
                     print('pmip已失去连接')
                 else:
                     url_list.append(pmip)
-                    await pmip_send({'type': 'websocket.send', 'text': json.dumps({'user': ip, 'text': event['text']})})
+                    await pmip_send(
+                        {'type': 'websocket.send', 'text': json.dumps({'user': ip.decode(), 'text': event['text']})})
                     break
 
 
@@ -95,13 +105,6 @@ async def byclien(scope, receive, send):
 
 async def byover(scope, receive, send):
     return None
-
-
-async def mysend(send, message):
-    """
-        发送消息
-    """
-    await send({'type': 'websocket.send', 'text': message})
 
 
 async def authentication(scope):

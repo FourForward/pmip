@@ -4,7 +4,7 @@ import json
 
 from aiohttp import WSMsgType
 
-server_ip = 'ws://[你的服务器IP:端口号]'
+server_ip = 'ws://[127.0.0.1:8000]'
 
 async def myclien():
     headers = {'status': 'pmip'}
