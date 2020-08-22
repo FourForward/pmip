@@ -68,7 +68,7 @@ async def byclien(scope, receive, send):
         event = await receive()
         if event['type'] == 'websocket.connect':
             # 将客户的IP+端口存入字典中，同一个IP 可能会有多个客户同时存在,所以取每个websocket的KEY值做键
-            ip = dict(scope['headers'])[b'sec-websocket-key']
+            ip = dict(scope['headers'])[b'sec-websocket-key'].decode()
             clien_dict[ip] = [scope, receive, send]
             await send({'type': 'websocket.accept'})
         elif event['type'] == 'websocket.receive':
@@ -91,7 +91,7 @@ async def byclien(scope, receive, send):
                 else:
                     url_list.append(pmip)
                     await pmip_send(
-                        {'type': 'websocket.send', 'text': json.dumps({'user': ip.decode(), 'text': event['text']})})
+                        {'type': 'websocket.send', 'text': json.dumps({'user': ip, 'text': event['text']})})
                     break
 
 

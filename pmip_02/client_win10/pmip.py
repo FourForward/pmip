@@ -21,6 +21,7 @@ async def myclien():
         try:
             async with session.ws_connect(server_ip) as ws:
                 active = True
+                print('连接成功')
                 while active:
                     data = await ws.receive()
                     print(data)
@@ -49,8 +50,6 @@ async def myclien():
             print(e, '等待重新连接')
             await asyncio.sleep(60)
             continue
-        else:
-            print('连接成功')
 
 
 async def myget(message):
