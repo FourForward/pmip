@@ -8,7 +8,7 @@
 
 该项目今后的发展方向是在手机上部署代理IP端，以获得更多的代理IP
 
-当前环境为：
+服务器端当前环境为：
 
 ```shell
 ubuntu 20.04
@@ -34,13 +34,13 @@ nginx
 
 ## ① 在公网服务器端部署：
 
-进入到pmip_02目录下，构建docker镜像
+进入到pmip_02/server目录下，构建docker镜像
 
 ```shell
 # 进入到pmip_02目录下，修改settings.py文件中的 KEY 值，他是客户端连接时验证身份的钥匙，默认为'123456' （该值在文件最下面）
-**@**:/****/pmip_02$ vim server/myasgi/myasgi/settings.py
+**@**:/****/pmip_02/server$ vim myasgi/myasgi/settings.py
 # 构建镜像
-**@**:/****/pmip_02$ sudo docker build -t pmip:0.2 .
+**@**:/****/pmip_02/server$ sudo docker build -t pmip:0.2 .
 # 成功之后运行容器
 docker run -d -p [自定义主机端口]:80 pmip:0.2
 # 查看容器是否运行
@@ -54,6 +54,7 @@ docker ps
 
 
 ## ② 在内网机器上部署代理IP端环境：
+### linux环境下
 
 ```shell
 # 进入pmip_02/pmip目录
@@ -70,6 +71,15 @@ docker ps
 
 ![image-20200817115006418](ReadMe.assets/image-20200817115006418.png)
 
+### win10环境下
+```shell
+# 只需要复制 pmip_02/client_win10/dist 目录至电脑的人一位置 即可
+# 双击其中pmip程序即可运行，首次运行需要在弹出的终端中输入服务器的IP和端口号
+# 下次启动时无需再输入，若要更改服务器IP和端口号，则删除同级目录下 my_server_addr.txt 内的内容，注意不要删除该文件，否则运行报错
+
+IP: 
+请输入服务器IP地址:端口 >>>127.0.0.1:8000 
+```
 ## ③ 模拟客户端发起请求
 
 ```python
